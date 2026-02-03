@@ -16,12 +16,10 @@ from datetime import datetime
 from ultralytics import YOLO
 
 model = "yolo11n"
-rtsp_stream = (
-    "rtsp://<your stream here>"
-)
+rtsp_stream = r"C:\ProjectCode\machina\test.mp4"
 
-ollama = "http://127.0.0.1:11434/api/generate"
-ollama_model = "llava:latest"
+#ollama = "http://127.0.0.1:11434/api/generate"
+#ollama_model = "llava:latest"
 
 _font = cv2.FONT_HERSHEY_SIMPLEX
 
@@ -563,8 +561,11 @@ def is_point_inside(x, y, list):
 
 
 def process(photo):
+    # 确保 img 在所有情况下都被正确初始化
     if hdstream == True:
         img = resample(photo)
+    else:
+        img = photo
 
     global obj_score, bounding_boxes, yolo_frame_count, cached_yolo_results, zoom_pan_active, zoom_pan_pause_time, dragging
 
@@ -581,17 +582,10 @@ def process(photo):
     else:
         # Run YOLO inference only every 3rd frame when not zooming/panning
         if yolo_frame_count % yolo_skip_frames == 0:
-            img_tensor = (
-                torch.from_numpy(cv2.cvtColor(img, cv2.COLOR_BGR2RGB))
-                .to(device)
-                .float()
-                / 255.0
-            )
-            img_tensor = img_tensor.permute(2, 0, 1).unsqueeze(0)
-
+            # 直接传递numpy数组给YOLO，让模型自动处理预处理
             with torch.no_grad():
                 results = model(
-                    img_tensor,
+                    img,
                     verbose=False,
                     iou=0.45,
                     half=False,
@@ -879,6 +873,13 @@ while loop:
     else:
         fskip = False
         time.sleep(0.01)
+
+print("closing cv window..")
+cv2.destroyAllWindows()
+print("terminating..")
+loop = False
+sys.exit(0)
+time.sleep(0.01)
 
 print("closing cv window..")
 cv2.destroyAllWindows()
